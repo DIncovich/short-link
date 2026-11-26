@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro URL Shortener</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --error: #ef4444;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        .container { max-width: 760px; margin: 0 auto; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+        h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
+        h2 { margin-top: 0; margin-bottom: 16px; font-size: 1.2rem; }
+        .user-panel { display: flex; align-items: center; gap: 12px; }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+        }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9rem; }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #fff;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        button {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        button.secondary { background-color: #64748b; }
+        button.secondary:hover { background-color: #475569; }
+        button.danger { background-color: var(--error); padding: 8px 14px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-btn { background: #e2e8f0; color: var(--text); flex: 1; }
+        .tab-btn.active { background: var(--primary); color: #fff; }
+        .hidden { display: none !important; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; }
+        .alert.error { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+        .alert.success { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .result-box {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .result-info { min-width: 0; word-break: break-all; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; }
+        .table-wrapper { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 500px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+        th { background-color: #f8fafc; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
+        .col-short { width: 38%; }
+        .col-orig { width: 47%; }
+        .col-clicks { width: 15%; text-align: right; }
+        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Pro URL Shortener</h1>
+        <div id="user-panel" class="user-panel hidden">
+            <span id="username-display" style="font-weight: 600;"></span>
+            <button class="danger" onclick="logout()">Выйти</button>
+        </div>
+    </header>
+
+    <div id="message-box" class="alert hidden"></div>
+
+    <div id="auth-section" class="card">
+        <div class="tabs">
+            <button id="tab-login" class="tab-btn active" onclick="switchAuthTab('login')">Вход</button>
+            <button id="tab-register" class="tab-btn" onclick="switchAuthTab('register')">Регистрация</button>
+        </div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="login-username">Имя пользователя</label>
+                <input type="text" id="login-username" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Пароль</label>
+                <input type="password" id="login-password" required>
+            </div>
+            <button type="submit" style="width: 100%;">Войти</button>
+        </form>
+
+        <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label for="reg-username">Придумайте имя пользователя</label>
+                <input type="text" id="reg-username" required>
+            </div>
+            <div class="form-group">
+                <label for="reg-password">Пароль (от 8 до 72 символов)</label>
+                <input type="password" id="reg-password" minlength="8" maxlength="72" required>
+            </div>
+            <button type="submit" style="width: 100%;">Зарегистрироваться</button>
+        </form>
+    </div>
+
+    <div id="shortener-section" class="card hidden">
+        <h2>Сократить новую ссылку</h2>
+        <form onsubmit="handleShorten(event)">
+            <div class="form-group">
+                <label for="original-url">Длинная ссылка (с http:// или https://)</label>
+                <input type="url" id="original-url" placeholder="https://example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="ttl-days">Время жизни в днях (необязательно)</label>
+                <input type="number" id="ttl-days" min="1" placeholder="Например: 7">
+            </div>
+            <button type="submit">Сократить</button>
+        </form>
+
+        <div id="short-result" class="result-box hidden">
+            <div class="result-info">
+                <strong>Ваша ссылка: </strong>
+                <a id="short-url-link" href="#" target="_blank"></a>
+                <div id="expires-info" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;"></div>
+            </div>
+            <button class="secondary" onclick="copyShortUrl()">Копировать</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h2 style="margin: 0;">Топ ссылок за неделю</h2>
+            <button class="secondary" onclick="loadRanking()">Обновить</button>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-short">Короткая ссылка</th>
+                        <th class="col-orig">Оригинал</th>
+                        <th class="col-clicks">Клики</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-body">
+                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Загрузка...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="/www/app.js"></script>
+</body>
+</html>

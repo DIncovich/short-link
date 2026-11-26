@@ -1,0 +1,12 @@
+services:
+  shortener:
+    build: .
+    container_name: url-shortener
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/shortener.db
+      - SECRET_KEY=34UN2304N03N842309
